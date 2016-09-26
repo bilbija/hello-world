@@ -21,10 +21,13 @@ key_valid : out std_logic                     --key is valid when key_valid is '
 end entity get_key;
 
 architecture behavioral of get_key is
-signal signal1 : std_logic;
-signal enable : std_logic;
-signal shift_reg : std_logic_vector(9 downto 0);
-signal count : std_logic_vector(3 downto 0);
+signal signal1     : std_logic;
+signal enable      : std_logic;
+signal shift_reg   : std_logic_vector(9 downto 0);
+signal key_o       : std_logic_vector(7 downto 0);
+signal count       : std_logic_vector(3 downto 0);
+signal key_valid_c : std_logic;
+signal key_valid_o : std_logic;
 begin
 
 --detect falling edge od ps2_clk
@@ -54,16 +57,37 @@ process(clk, reset)
 begin
    if(reset = '0') then
       count <= "0000";
-      key_valid <= '0';
-      key <= (others => '0');
+      key_valid_c <= '0';
    elsif(falling_edge(clk)) then
-      if(count = "1010") then
+      if(count = "1001") then
          count <= "0000";
-         key_valid <= '1';
-         key <= shift_reg(9 downto 2);
+         key_valid_c <= '1';
       else
          count <= count + 1;
       end if;
    end if;
 end process;
+
+--letch output signals key_valid
+process(clk, reset)
+begin
+	if(reset = '0') then
+		key_valid_o <= '0';
+	elsif(falling_edge(clk)) then
+		key_valid_o <= key_valid_c;
+	end if;
+end process;
+
+--letch output signal key (8b)
+process(clk, reset)
+begin
+	if(reset = '0') then
+        key_o <= (others =>'0');
+   elsif(falling_edge(clk)) then
+        key_o <= shift_reg(9 downto 2);
+	end if;
+end process;
+
+key_valid <= key_valid_o;
+key <= key_o;
 end architecture behavioral;
